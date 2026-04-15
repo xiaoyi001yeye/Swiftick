@@ -1,0 +1,13 @@
+.gradle/
+.idea/
+local.properties
+build/
+app/build/
+captures/
+*.iml
+WordFlow/
+.wiki-schema.md
+index.md
+log.md
+raw/
+wiki/
