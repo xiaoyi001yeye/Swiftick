@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 class TimerHomePage extends StatefulWidget {
@@ -12,6 +13,7 @@ class TimerHomePage extends StatefulWidget {
 
 class _TimerHomePageState extends State<TimerHomePage> {
   Timer? _ticker;
+  final AudioPlayer _dingPlayer = AudioPlayer();
   Duration _elapsed = Duration.zero;
   DateTime? _startedAt;
   Duration? _leftStoppedAt;
@@ -23,8 +25,15 @@ class _TimerHomePageState extends State<TimerHomePage> {
   bool get _rightLocked => _rightStoppedAt != null;
 
   @override
+  void initState() {
+    super.initState();
+    _dingPlayer.setReleaseMode(ReleaseMode.stop);
+  }
+
+  @override
   void dispose() {
     _ticker?.cancel();
+    _dingPlayer.dispose();
     super.dispose();
   }
 
@@ -66,6 +75,8 @@ class _TimerHomePageState extends State<TimerHomePage> {
     final willCompleteRound =
         (isLeft && _rightLocked) || (!isLeft && _leftLocked);
 
+    unawaited(_playPauseSound());
+
     setState(() {
       if (isLeft) {
         _leftStoppedAt = capture;
@@ -78,6 +89,15 @@ class _TimerHomePageState extends State<TimerHomePage> {
         _startedAt = null;
       }
     });
+  }
+
+  Future<void> _playPauseSound() async {
+    try {
+      await _dingPlayer.stop();
+      await _dingPlayer.play(AssetSource('sound/ding.mp3'));
+    } catch (_) {
+      // 音效失败时不影响计时主流程
+    }
   }
 
   void _resetToIdle() {
