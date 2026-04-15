@@ -14,7 +14,12 @@ class _TimerHomePageState extends State<TimerHomePage> {
   Timer? _ticker;
   Duration _elapsed = Duration.zero;
   DateTime? _startedAt;
-  bool _isRunning = false;
+  Duration? _leftStoppedAt;
+  Duration? _rightStoppedAt;
+
+  bool get _isRunning => _startedAt != null;
+  bool get _leftLocked => _leftStoppedAt != null;
+  bool get _rightLocked => _rightStoppedAt != null;
 
   @override
   void dispose() {
@@ -22,21 +27,11 @@ class _TimerHomePageState extends State<TimerHomePage> {
     super.dispose();
   }
 
-  void _toggleTimer() {
-    if (_isRunning) {
-      _ticker?.cancel();
-      setState(() {
-        _isRunning = false;
-        _startedAt = null;
-      });
-      return;
-    }
-
-    final now = DateTime.now();
-    _startedAt = now.subtract(_elapsed);
-    _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      final startedAt = _startedAt;
-      if (startedAt == null || !mounted) {
+  void _startTimer() {
+    _ticker?.cancel();
+    final startedAt = DateTime.now();
+    _ticker = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      if (!mounted || _startedAt == null) {
         return;
       }
 
@@ -46,102 +41,136 @@ class _TimerHomePageState extends State<TimerHomePage> {
     });
 
     setState(() {
-      _isRunning = true;
+      _elapsed = Duration.zero;
+      _leftStoppedAt = null;
+      _rightStoppedAt = null;
+      _startedAt = startedAt;
     });
   }
 
-  String get _formattedTime {
-    final hours = _elapsed.inHours.toString().padLeft(2, '0');
-    final minutes = (_elapsed.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (_elapsed.inSeconds % 60).toString().padLeft(2, '0');
-    final centiseconds =
-        ((_elapsed.inMilliseconds % 1000) ~/ 10).toString().padLeft(2, '0');
-    return '$hours:$minutes:$seconds.$centiseconds';
+  void _handleSideTap({required bool isLeft}) {
+    if (!_isRunning) {
+      return;
+    }
+
+    if (isLeft && _leftLocked) {
+      return;
+    }
+
+    if (!isLeft && _rightLocked) {
+      return;
+    }
+
+    final capture = _elapsed;
+    final willCompleteRound =
+        (isLeft && _rightLocked) || (!isLeft && _leftLocked);
+
+    if (willCompleteRound) {
+      _resetToIdle();
+      return;
+    }
+
+    setState(() {
+      if (isLeft) {
+        _leftStoppedAt = capture;
+      } else {
+        _rightStoppedAt = capture;
+      }
+    });
+  }
+
+  void _resetToIdle() {
+    _ticker?.cancel();
+    setState(() {
+      _elapsed = Duration.zero;
+      _leftStoppedAt = null;
+      _rightStoppedAt = null;
+      _startedAt = null;
+    });
+  }
+
+  String _formatTime(Duration value) {
+    final minutes = value.inMinutes.toString().padLeft(2, '0');
+    final seconds = (value.inSeconds % 60).toString().padLeft(2, '0');
+    final milliseconds =
+        (value.inMilliseconds % 1000).toString().padLeft(3, '0');
+    return '$minutes:$seconds.$milliseconds';
+  }
+
+  Widget _buildRunningSide({
+    required Color backgroundColor,
+    required Duration? stoppedAt,
+    required VoidCallback onTap,
+  }) {
+    final shownTime = stoppedAt ?? _elapsed;
+
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ColoredBox(
+          color: backgroundColor,
+          child: Center(
+            child: Text(
+              _formatTime(shownTime),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 54,
+                fontWeight: FontWeight.w700,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? const [
-                    Color(0xFF0F172A),
-                    Color(0xFF132238),
-                    Color(0xFF16302B),
-                  ]
-                : const [
-                    Color(0xFFF8FCFB),
-                    Color(0xFFEAF6F2),
-                    Color(0xFFDCEFEA),
-                  ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'TimerFlow',
-                  style: theme.textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '按一下开始，再按一下停止。',
-                  style: theme.textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const Spacer(),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 28,
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          _formattedTime,
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          _isRunning ? '计时进行中' : '计时已停止',
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                      ],
-                    ),
+    if (!_isRunning) {
+      return Scaffold(
+        body: ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: SizedBox(
+              width: 240,
+              height: 88,
+              child: ElevatedButton(
+                onPressed: _startTimer,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF60B49D),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _toggleTimer,
-                  style: theme.elevatedButtonTheme.style?.copyWith(
-                    backgroundColor: MaterialStatePropertyAll(
-                      _isRunning
-                          ? const Color(0xFF17312A)
-                          : const Color(0xFF60B49D),
-                    ),
-                  ),
-                  child: Text(_isRunning ? '停止计时' : '开始计时'),
-                ),
-                const Spacer(),
-              ],
+                child: const Text('开始'),
+              ),
             ),
           ),
         ),
+      );
+    }
+
+    return Scaffold(
+      body: Row(
+        children: [
+          _buildRunningSide(
+            backgroundColor: const Color(0xFF1565C0),
+            stoppedAt: _leftStoppedAt,
+            onTap: () => _handleSideTap(isLeft: true),
+          ),
+          _buildRunningSide(
+            backgroundColor: const Color(0xFFC62828),
+            stoppedAt: _rightStoppedAt,
+            onTap: () => _handleSideTap(isLeft: false),
+          ),
+        ],
       ),
     );
   }
