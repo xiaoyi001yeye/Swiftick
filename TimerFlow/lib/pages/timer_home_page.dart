@@ -18,6 +18,7 @@ class _TimerHomePageState extends State<TimerHomePage> {
   Duration? _rightStoppedAt;
 
   bool get _isRunning => _startedAt != null;
+  bool get _isFinished => _leftLocked && _rightLocked;
   bool get _leftLocked => _leftStoppedAt != null;
   bool get _rightLocked => _rightStoppedAt != null;
 
@@ -65,16 +66,16 @@ class _TimerHomePageState extends State<TimerHomePage> {
     final willCompleteRound =
         (isLeft && _rightLocked) || (!isLeft && _leftLocked);
 
-    if (willCompleteRound) {
-      _resetToIdle();
-      return;
-    }
-
     setState(() {
       if (isLeft) {
         _leftStoppedAt = capture;
       } else {
         _rightStoppedAt = capture;
+      }
+
+      if (willCompleteRound) {
+        _ticker?.cancel();
+        _startedAt = null;
       }
     });
   }
@@ -128,7 +129,7 @@ class _TimerHomePageState extends State<TimerHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isRunning) {
+    if (!_isRunning && !_isFinished) {
       return Scaffold(
         body: ColoredBox(
           color: Colors.black,
@@ -158,18 +159,49 @@ class _TimerHomePageState extends State<TimerHomePage> {
     }
 
     return Scaffold(
-      body: Row(
+      body: Stack(
         children: [
-          _buildRunningSide(
-            backgroundColor: const Color(0xFF1565C0),
-            stoppedAt: _leftStoppedAt,
-            onTap: () => _handleSideTap(isLeft: true),
+          Row(
+            children: [
+              _buildRunningSide(
+                backgroundColor: const Color(0xFF1565C0),
+                stoppedAt: _leftStoppedAt,
+                onTap: () => _handleSideTap(isLeft: true),
+              ),
+              _buildRunningSide(
+                backgroundColor: const Color(0xFFC62828),
+                stoppedAt: _rightStoppedAt,
+                onTap: () => _handleSideTap(isLeft: false),
+              ),
+            ],
           ),
-          _buildRunningSide(
-            backgroundColor: const Color(0xFFC62828),
-            stoppedAt: _rightStoppedAt,
-            onTap: () => _handleSideTap(isLeft: false),
-          ),
+          if (_isFinished)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 24,
+              child: Center(
+                child: SizedBox(
+                  width: 220,
+                  height: 72,
+                  child: ElevatedButton(
+                    onPressed: _resetToIdle,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    child: const Text('重置'),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
