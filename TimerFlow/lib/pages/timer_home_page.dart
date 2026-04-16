@@ -206,6 +206,75 @@ class _TimerHomePageState extends State<TimerHomePage> {
     );
   }
 
+  Widget _buildStartButton() {
+    final borderRadius = BorderRadius.circular(30);
+
+    return SizedBox(
+      width: 280,
+      height: 96,
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.28),
+                width: 1.5,
+              ),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF8AE6CC),
+                  Color(0xFF60B49D),
+                  Color(0xFF327C72),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.18),
+                  blurRadius: 26,
+                  offset: const Offset(0, 14),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF60B49D).withOpacity(0.35),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _startCountdown,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                shadowColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                shape: RoundedRectangleBorder(borderRadius: borderRadius),
+                textStyle: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 3.6,
+                ),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.play_arrow_rounded, size: 34),
+                  SizedBox(width: 8),
+                  Text('START'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -213,28 +282,7 @@ class _TimerHomePageState extends State<TimerHomePage> {
         children: [
           _buildSplitBackground(),
           if (!_isRunning && !_isFinished && !_isCountingDown)
-            Center(
-              child: SizedBox(
-                width: 240,
-                height: 88,
-                child: ElevatedButton(
-                  onPressed: _startCountdown,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF60B49D),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  child: const Text('开始'),
-                ),
-              ),
-            ),
+            Center(child: _buildStartButton()),
           if (_isCountingDown)
             IgnorePointer(
               child: ColoredBox(
