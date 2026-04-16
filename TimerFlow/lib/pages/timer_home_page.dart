@@ -583,6 +583,9 @@ class TimerHomePage extends StatefulWidget {
 }
 
 class _TimerHomePageState extends State<TimerHomePage> {
+  static final _StartButtonStyleData _activeStartStyle =
+      _startButtonStyles.firstWhere((style) => style.id == 6);
+
   Timer? _ticker;
   Timer? _countdownTicker;
   final AudioPlayer _dingPlayer = AudioPlayer();
@@ -591,17 +594,13 @@ class _TimerHomePageState extends State<TimerHomePage> {
   Duration? _leftStoppedAt;
   Duration? _rightStoppedAt;
   int? _countdownValue;
-  int _currentStartStyleIndex = 0;
   bool _isStartPressed = false;
-  bool _isRefreshPressed = false;
 
   bool get _isRunning => _startedAt != null;
   bool get _isFinished => _leftLocked && _rightLocked;
   bool get _isCountingDown => _countdownValue != null;
   bool get _leftLocked => _leftStoppedAt != null;
   bool get _rightLocked => _rightStoppedAt != null;
-  _StartButtonStyleData get _currentStartStyle =>
-      _startButtonStyles[_currentStartStyleIndex];
 
   @override
   void initState() {
@@ -726,19 +725,6 @@ class _TimerHomePageState extends State<TimerHomePage> {
       _rightStoppedAt = null;
       _startedAt = null;
       _countdownValue = null;
-    });
-  }
-
-  void _showNextStartStyle() {
-    if (_isRunning || _isCountingDown) {
-      return;
-    }
-
-    setState(() {
-      _currentStartStyleIndex =
-          (_currentStartStyleIndex + 1) % _startButtonStyles.length;
-      _isStartPressed = false;
-      _isRefreshPressed = false;
     });
   }
 
@@ -1165,12 +1151,7 @@ class _TimerHomePageState extends State<TimerHomePage> {
       case 6:
         return const _StartLabelConfig(
           primary: 'START',
-          secondary: 'ROUND ONE',
-          badge: 'ICE',
-          badgeAlignment: Alignment.bottomLeft,
-          badgePadding: EdgeInsets.only(bottom: 10, left: 12),
           primaryScaleX: 1.04,
-          secondarySize: 10,
         );
       case 7:
         return const _StartLabelConfig(
@@ -1443,123 +1424,6 @@ class _TimerHomePageState extends State<TimerHomePage> {
     );
   }
 
-  Widget _buildStyleSwitcher() {
-    final style = _currentStartStyle;
-    final idLabel = style.id.toString().padLeft(2, '0');
-    final totalLabel = _startButtonStyles.length.toString().padLeft(2, '0');
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.14),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withOpacity(0.24)),
-          ),
-          child: Text(
-            'BUTTON $idLabel/$totalLabel  ${style.name.toUpperCase()}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.7,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          alignment: WrapAlignment.center,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 16,
-          runSpacing: 14,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              transitionBuilder: (child, animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.94, end: 1).animate(animation),
-                    child: child,
-                  ),
-                );
-              },
-              child: KeyedSubtree(
-                key: ValueKey(style.id),
-                child: _buildStartButton(style),
-              ),
-            ),
-            _buildRefreshButton(),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRefreshButton() {
-    return AnimatedScale(
-      scale: _isRefreshPressed ? 0.95 : 1,
-      duration: const Duration(milliseconds: 100),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        transform: Matrix4.translationValues(0, _isRefreshPressed ? 4 : 0, 0),
-        width: 82,
-        height: 82,
-        child: Material(
-          color: Colors.transparent,
-          child: Ink(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.92),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.95),
-                width: 1.6,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.22),
-                  blurRadius: 18,
-                  offset: Offset(0, _isRefreshPressed ? 5 : 12),
-                ),
-              ],
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(26),
-              onTap: _showNextStartStyle,
-              onTapDown: (_) => setState(() => _isRefreshPressed = true),
-              onTapUp: (_) => setState(() => _isRefreshPressed = false),
-              onTapCancel: () => setState(() => _isRefreshPressed = false),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(
-                    Icons.refresh_rounded,
-                    size: 30,
-                    color: Color(0xFF263238),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'NEXT',
-                    style: TextStyle(
-                      color: Color(0xFF263238),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1567,7 +1431,7 @@ class _TimerHomePageState extends State<TimerHomePage> {
         children: [
           _buildSplitBackground(),
           if (!_isRunning && !_isFinished && !_isCountingDown)
-            Center(child: _buildStyleSwitcher()),
+            Center(child: _buildStartButton(_activeStartStyle)),
           if (_isCountingDown)
             IgnorePointer(
               child: ColoredBox(

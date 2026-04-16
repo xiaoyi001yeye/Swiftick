@@ -38,5 +38,5 @@ flutter run
 说明：
 
 - 由于当前项目是手工搭的 Flutter 骨架，CI 会先执行 `flutter create --platforms=android .` 自动补齐 Android 工程
-- 构建完成后会在 Actions artifact 中上传 `app-release.apk`
+- 构建完成后会在 Actions artifact 中上传 `time-release.apk`
 - 如果是 `timerflow-v*.*.*` 标签，还会自动创建 GitHub Release 并附上 APK
