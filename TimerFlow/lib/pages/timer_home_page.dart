@@ -797,8 +797,9 @@ class _TimerHomePageState extends State<TimerHomePage> {
   }
 
   Widget _buildStartButton(_StartButtonStyleData style) {
-    final shellRadius = BorderRadius.circular(style.frameRadius);
-    final keyRadius = BorderRadius.circular(style.bodyRadius);
+    final shellRadius = _frameBorderRadiusForStyle(style);
+    final keyRadius = _bodyBorderRadiusForStyle(style);
+    final labelConfig = _labelConfigForStyle(style);
     final outerShadow = style.flatStyle ? 12.0 : 22.0;
     final outerOffset = _isStartPressed ? style.pressDepth : style.shadowDepth;
 
@@ -806,160 +807,148 @@ class _TimerHomePageState extends State<TimerHomePage> {
       scale: _isStartPressed ? 0.97 : 1,
       duration: const Duration(milliseconds: 110),
       curve: Curves.easeOutCubic,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 110),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0, _isStartPressed ? style.pressDepth : 0, 0),
-        width: style.width,
-        height: style.height,
-        child: ClipRRect(
-          borderRadius: shellRadius,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: style.flatStyle ? 6 : 10,
-              sigmaY: style.flatStyle ? 6 : 10,
-            ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: shellRadius,
-                border: Border.all(
-                  color: style.frameBorderColor,
-                  width: style.frameBorderWidth,
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: style.frameColors,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(style.flatStyle ? 0.16 : 0.28),
-                    blurRadius: outerShadow,
-                    offset: Offset(0, outerOffset),
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(style.flatStyle ? 0.28 : 0.46),
-                    blurRadius: style.flatStyle ? 5 : 8,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+      child: Transform.rotate(
+        angle: _shellRotationForStyle(style),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 110),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.translationValues(
+            0,
+            _isStartPressed ? style.pressDepth : 0,
+            0,
+          ),
+          width: style.width,
+          height: style.height,
+          child: ClipRRect(
+            borderRadius: shellRadius,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: style.flatStyle ? 6 : 10,
+                sigmaY: style.flatStyle ? 6 : 10,
               ),
-              child: Padding(
-                padding: EdgeInsets.all(style.bodyInset),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _startCountdown,
-                    onTapDown: (_) => setState(() => _isStartPressed = true),
-                    onTapUp: (_) => setState(() => _isStartPressed = false),
-                    onTapCancel: () => setState(() => _isStartPressed = false),
-                    borderRadius: keyRadius,
-                    splashColor: Colors.white.withOpacity(0.08),
-                    highlightColor: Colors.transparent,
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        borderRadius: keyRadius,
-                        border: Border.all(
-                          color: style.bodyBorderColor,
-                          width: style.bodyBorderWidth,
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: style.bodyColors,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: shellRadius,
+                  border: Border.all(
+                    color: style.frameBorderColor,
+                    width: style.frameBorderWidth,
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: style.frameColors,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(
+                        style.flatStyle ? 0.16 : 0.28,
+                      ),
+                      blurRadius: outerShadow,
+                      offset: Offset(0, outerOffset),
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withOpacity(
+                        style.flatStyle ? 0.28 : 0.46,
+                      ),
+                      blurRadius: style.flatStyle ? 5 : 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    if (_showFrameInsetForStyle(style))
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                              style.flatStyle ? 7 : style.bodyInset,
+                            ),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                borderRadius: keyRadius,
+                                border: Border.all(
+                                  color: style.frameBorderColor.withOpacity(0.35),
+                                  width: 1.0,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Positioned(
-                            top: style.pixelStyle ? 9 : 10,
-                            left: style.sideInset,
-                            right: style.sideInset,
-                            child: Container(
-                              height: style.flatStyle ? 3 : 4,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(style.pixelStyle ? 6 : 99),
-                                gradient: LinearGradient(
-                                  colors: style.glossColors,
-                                ),
+                    Padding(
+                      padding: EdgeInsets.all(style.bodyInset),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _startCountdown,
+                          onTapDown: (_) => setState(() => _isStartPressed = true),
+                          onTapUp: (_) => setState(() => _isStartPressed = false),
+                          onTapCancel: () => setState(() => _isStartPressed = false),
+                          borderRadius: keyRadius,
+                          splashColor: Colors.white.withOpacity(0.08),
+                          highlightColor: Colors.transparent,
+                          child: Ink(
+                            decoration: BoxDecoration(
+                              borderRadius: keyRadius,
+                              border: Border.all(
+                                color: style.bodyBorderColor,
+                                width: style.bodyBorderWidth,
+                              ),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: style.bodyColors,
                               ),
                             ),
-                          ),
-                          if (!style.flatStyle)
-                            Positioned(
-                              left: style.sideInset,
-                              right: style.sideInset,
-                              bottom: 10,
-                              child: Container(
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                    style.pixelStyle ? 6 : 99,
-                                  ),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.black.withOpacity(0),
-                                      Colors.black.withOpacity(0.18),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          Positioned(
-                            left: style.sideInset,
-                            child: Row(
+                            child: Stack(
+                              alignment: Alignment.center,
                               children: [
-                                _AccentPip(
-                                  color: style.redLights.first,
-                                  size: style.pipSize,
-                                ),
-                                const SizedBox(width: 5),
-                                _AccentPip(
-                                  color: style.redLights.last,
-                                  size: style.pipSize,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Positioned(
-                            right: style.sideInset,
-                            child: Container(
-                              width: style.sliderWidth,
-                              height: style.sliderHeight,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  style.pixelStyle ? 4 : 99,
-                                ),
-                                gradient: LinearGradient(
-                                  colors: style.sliderColors,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (style.pixelStyle) ..._buildPixelCorners(style),
-                          Text(
-                            'START',
-                            style: TextStyle(
-                              color: style.labelColor,
-                              fontSize: style.textSize,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: style.letterSpacing,
-                              shadows: [
-                                Shadow(
-                                  color: style.labelShadowColor,
-                                  blurRadius: style.flatStyle ? 1 : 6,
-                                  offset: Offset(0, style.flatStyle ? 1 : 2),
+                                if (!style.flatStyle)
+                                  Positioned(
+                                    left: style.sideInset,
+                                    right: style.sideInset,
+                                    bottom: 10,
+                                    child: Container(
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                          style.pixelStyle ? 6 : 99,
+                                        ),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.black.withOpacity(0),
+                                            Colors.black.withOpacity(0.18),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (style.pixelStyle) ..._buildPixelCorners(style),
+                                if (labelConfig.badge != null)
+                                  Align(
+                                    alignment: labelConfig.badgeAlignment,
+                                    child: Padding(
+                                      padding: labelConfig.badgePadding,
+                                      child: _buildStyleBadge(style, labelConfig),
+                                    ),
+                                  ),
+                                Align(
+                                  alignment: labelConfig.alignment,
+                                  child: Padding(
+                                    padding: labelConfig.padding,
+                                    child: _buildLabelGroup(style, labelConfig),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -1005,6 +994,453 @@ class _TimerHomePageState extends State<TimerHomePage> {
         ),
       ),
     ];
+  }
+
+  BorderRadius _frameBorderRadiusForStyle(_StartButtonStyleData style) {
+    final radius = style.frameRadius;
+    switch (style.id % 6) {
+      case 1:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius),
+          topRight: Radius.circular(radius * 0.45),
+          bottomLeft: Radius.circular(radius * 0.35),
+          bottomRight: Radius.circular(radius * 0.85),
+        );
+      case 2:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius * 0.3),
+          topRight: Radius.circular(radius * 0.95),
+          bottomLeft: Radius.circular(radius * 0.95),
+          bottomRight: Radius.circular(radius * 0.3),
+        );
+      case 3:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius * 0.55),
+          topRight: Radius.circular(radius * 0.55),
+          bottomLeft: Radius.circular(radius),
+          bottomRight: Radius.circular(radius),
+        );
+      case 4:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius * 0.9),
+          topRight: Radius.circular(radius * 0.22),
+          bottomLeft: Radius.circular(radius * 0.22),
+          bottomRight: Radius.circular(radius * 0.9),
+        );
+      case 5:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius * 0.35),
+          topRight: Radius.circular(radius),
+          bottomLeft: Radius.circular(radius),
+          bottomRight: Radius.circular(radius * 0.35),
+        );
+      default:
+        return BorderRadius.circular(radius);
+    }
+  }
+
+  BorderRadius _bodyBorderRadiusForStyle(_StartButtonStyleData style) {
+    final radius = style.bodyRadius;
+    switch (style.id % 6) {
+      case 1:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius),
+          topRight: Radius.circular(radius * 0.5),
+          bottomLeft: Radius.circular(radius * 0.3),
+          bottomRight: Radius.circular(radius * 0.8),
+        );
+      case 2:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius * 0.25),
+          topRight: Radius.circular(radius * 0.9),
+          bottomLeft: Radius.circular(radius * 0.9),
+          bottomRight: Radius.circular(radius * 0.25),
+        );
+      case 3:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius * 0.45),
+          topRight: Radius.circular(radius * 0.45),
+          bottomLeft: Radius.circular(radius),
+          bottomRight: Radius.circular(radius),
+        );
+      case 4:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius * 0.95),
+          topRight: Radius.circular(radius * 0.18),
+          bottomLeft: Radius.circular(radius * 0.18),
+          bottomRight: Radius.circular(radius * 0.95),
+        );
+      case 5:
+        return BorderRadius.only(
+          topLeft: Radius.circular(radius * 0.3),
+          topRight: Radius.circular(radius),
+          bottomLeft: Radius.circular(radius),
+          bottomRight: Radius.circular(radius * 0.3),
+        );
+      default:
+        return BorderRadius.circular(radius);
+    }
+  }
+
+  double _shellRotationForStyle(_StartButtonStyleData style) {
+    const rotations = <int, double>{
+      2: -0.012,
+      4: 0.016,
+      8: -0.02,
+      11: -0.024,
+      12: 0.01,
+      14: 0.014,
+      17: -0.018,
+      18: 0.012,
+      19: -0.01,
+      20: 0.008,
+    };
+    return rotations[style.id] ?? 0;
+  }
+
+  bool _showFrameInsetForStyle(_StartButtonStyleData style) {
+    return switch (style.id) {
+      2 || 3 || 8 || 11 || 12 || 13 || 15 || 18 || 20 => true,
+      _ => false,
+    };
+  }
+
+  _StartLabelConfig _labelConfigForStyle(_StartButtonStyleData style) {
+    switch (style.id) {
+      case 1:
+        return const _StartLabelConfig(
+          primary: 'START',
+          secondary: 'CLASSIC CUT',
+          badge: '01',
+          badgeAlignment: Alignment.topRight,
+          badgePadding: EdgeInsets.only(top: 10, right: 12),
+          secondarySize: 10,
+        );
+      case 2:
+        return const _StartLabelConfig(
+          primary: 'PRESS START',
+          secondary: '8-BIT MODE',
+          badge: 'PIX',
+          badgeAlignment: Alignment.topLeft,
+          badgePadding: EdgeInsets.only(top: 10, left: 12),
+          primarySizeAdjust: -2,
+          primaryScaleX: 1.08,
+          outline: true,
+          secondarySize: 10,
+          secondaryLetterSpacing: 2.4,
+        );
+      case 3:
+        return const _StartLabelConfig(
+          primary: 'Start',
+          secondary: 'SILENT JOY',
+          badge: 'MUTE',
+          badgeAlignment: Alignment.bottomRight,
+          badgePadding: EdgeInsets.only(bottom: 10, right: 12),
+          fontWeight: FontWeight.w700,
+          primaryScaleX: 0.95,
+          secondarySize: 10,
+        );
+      case 4:
+        return const _StartLabelConfig(
+          primary: 'START!',
+          secondary: 'CANDY CLUB',
+          badge: 'POP',
+          badgeAlignment: Alignment.topLeft,
+          badgePadding: EdgeInsets.only(top: 10, left: 12),
+          fontStyle: FontStyle.italic,
+          primaryRotation: -0.04,
+          secondarySize: 10,
+        );
+      case 5:
+        return const _StartLabelConfig(
+          primary: 'READY',
+          secondary: 'PRESS TO START',
+          badge: 'FAM',
+          badgeAlignment: Alignment.topRight,
+          badgePadding: EdgeInsets.only(top: 10, right: 12),
+          primarySizeAdjust: -1,
+          secondarySize: 9,
+          secondaryLetterSpacing: 1.8,
+        );
+      case 6:
+        return const _StartLabelConfig(
+          primary: 'START',
+          secondary: 'ROUND ONE',
+          badge: 'ICE',
+          badgeAlignment: Alignment.bottomLeft,
+          badgePadding: EdgeInsets.only(bottom: 10, left: 12),
+          primaryScaleX: 1.04,
+          secondarySize: 10,
+        );
+      case 7:
+        return const _StartLabelConfig(
+          primary: 'PLAY',
+          secondary: 'TAP TO START',
+          badge: 'MINT',
+          badgeAlignment: Alignment.topLeft,
+          badgePadding: EdgeInsets.only(top: 10, left: 12),
+          primarySizeAdjust: 1,
+          secondarySize: 9,
+        );
+      case 8:
+        return const _StartLabelConfig(
+          primary: 'GO START',
+          secondary: 'NEON READY',
+          badge: 'MAX',
+          badgeAlignment: Alignment.topRight,
+          badgePadding: EdgeInsets.only(top: 10, right: 12),
+          outline: true,
+          primarySizeAdjust: -1,
+          primaryRotation: -0.03,
+          secondarySize: 10,
+        );
+      case 9:
+        return const _StartLabelConfig(
+          primary: 'START',
+          secondary: 'MONO LAB',
+          badge: '09',
+          badgeAlignment: Alignment.bottomRight,
+          badgePadding: EdgeInsets.only(bottom: 10, right: 12),
+          fontWeight: FontWeight.w800,
+          secondarySize: 9,
+        );
+      case 10:
+        return const _StartLabelConfig(
+          primary: 'START NOW',
+          secondary: 'CARBON CUT',
+          badge: 'PRO',
+          badgeAlignment: Alignment.topLeft,
+          badgePadding: EdgeInsets.only(top: 10, left: 12),
+          primarySizeAdjust: -2,
+          secondarySize: 10,
+        );
+      case 11:
+        return const _StartLabelConfig(
+          primary: 'INSERT START',
+          secondary: 'HOT ARCADE',
+          badge: '11',
+          badgeAlignment: Alignment.topRight,
+          badgePadding: EdgeInsets.only(top: 9, right: 12),
+          outline: true,
+          primarySizeAdjust: -3,
+          primaryScaleX: 1.06,
+          secondarySize: 10,
+        );
+      case 12:
+        return const _StartLabelConfig(
+          primary: 'START',
+          secondary: 'GLASS MODE',
+          badge: 'CALM',
+          badgeAlignment: Alignment.topLeft,
+          badgePadding: EdgeInsets.only(top: 10, left: 12),
+          fontWeight: FontWeight.w700,
+          primaryScaleX: 0.92,
+          secondarySize: 10,
+        );
+      case 13:
+        return const _StartLabelConfig(
+          primary: 'PRESS START',
+          secondary: 'BRUT CUT',
+          badge: 'RAW',
+          badgeAlignment: Alignment.bottomLeft,
+          badgePadding: EdgeInsets.only(bottom: 10, left: 12),
+          primarySizeAdjust: -2,
+          primaryScaleX: 1.04,
+          secondarySize: 10,
+        );
+      case 14:
+        return const _StartLabelConfig(
+          primary: 'START',
+          secondary: 'JOY MIX',
+          badge: '14',
+          badgeAlignment: Alignment.topRight,
+          badgePadding: EdgeInsets.only(top: 10, right: 12),
+          fontStyle: FontStyle.italic,
+          primaryRotation: 0.03,
+          secondarySize: 10,
+        );
+      case 15:
+        return const _StartLabelConfig(
+          primary: 'START',
+          secondary: 'GOLD EDIT',
+          badge: 'VIP',
+          badgeAlignment: Alignment.topLeft,
+          badgePadding: EdgeInsets.only(top: 10, left: 12),
+          outline: true,
+          secondarySize: 10,
+        );
+      case 16:
+        return const _StartLabelConfig(
+          primary: 'READY',
+          secondary: 'FIELD UNIT',
+          badge: '16',
+          badgeAlignment: Alignment.bottomRight,
+          badgePadding: EdgeInsets.only(bottom: 10, right: 12),
+          primarySizeAdjust: -1,
+          primaryScaleX: 0.98,
+          secondarySize: 9,
+        );
+      case 17:
+        return const _StartLabelConfig(
+          primary: 'START!',
+          secondary: 'POP STAR',
+          badge: 'FUN',
+          badgeAlignment: Alignment.topRight,
+          badgePadding: EdgeInsets.only(top: 11, right: 13),
+          fontStyle: FontStyle.italic,
+          primaryRotation: -0.02,
+          secondarySize: 10,
+        );
+      case 18:
+        return const _StartLabelConfig(
+          primary: 'BEGIN',
+          secondary: 'LIME RUSH',
+          badge: '18',
+          badgeAlignment: Alignment.topLeft,
+          badgePadding: EdgeInsets.only(top: 10, left: 12),
+          outline: true,
+          primaryScaleX: 1.1,
+          primarySizeAdjust: -1,
+          secondarySize: 10,
+        );
+      case 19:
+        return const _StartLabelConfig(
+          primary: 'START',
+          secondary: 'OCEAN RUN',
+          badge: 'WAVE',
+          badgeAlignment: Alignment.bottomLeft,
+          badgePadding: EdgeInsets.only(bottom: 10, left: 12),
+          fontWeight: FontWeight.w800,
+          primaryScaleX: 1.03,
+          secondarySize: 9,
+        );
+      case 20:
+        return const _StartLabelConfig(
+          primary: 'START',
+          secondary: 'NOIR EDIT',
+          badge: '20',
+          badgeAlignment: Alignment.topRight,
+          badgePadding: EdgeInsets.only(top: 10, right: 12),
+          fontWeight: FontWeight.w600,
+          primaryScaleX: 0.9,
+          secondarySize: 9,
+        );
+      default:
+        return const _StartLabelConfig(primary: 'START');
+    }
+  }
+
+  Widget _buildStyleBadge(
+    _StartButtonStyleData style,
+    _StartLabelConfig labelConfig,
+  ) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: style.labelColor.withOpacity(style.flatStyle ? 0.12 : 0.16),
+        borderRadius: BorderRadius.circular(style.pixelStyle ? 8 : 999),
+        border: Border.all(
+          color: style.labelColor.withOpacity(0.28),
+          width: 0.9,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          labelConfig.badge!,
+          style: TextStyle(
+            color: style.labelColor.withOpacity(0.88),
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.3,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabelGroup(
+    _StartButtonStyleData style,
+    _StartLabelConfig labelConfig,
+  ) {
+    final primary = _buildPrimaryLabel(style, labelConfig);
+
+    return Transform.rotate(
+      angle: labelConfig.primaryRotation,
+      child: Transform.scale(
+        scaleX: labelConfig.primaryScaleX,
+        scaleY: labelConfig.primaryScaleY,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (labelConfig.secondary != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  labelConfig.secondary!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: style.labelColor.withOpacity(0.72),
+                    fontSize: labelConfig.secondarySize,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: labelConfig.secondaryLetterSpacing,
+                  ),
+                ),
+              ),
+            primary,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrimaryLabel(
+    _StartButtonStyleData style,
+    _StartLabelConfig labelConfig,
+  ) {
+    final textStyle = TextStyle(
+      color: style.labelColor,
+      fontSize: style.textSize + labelConfig.primarySizeAdjust,
+      fontWeight: labelConfig.fontWeight,
+      fontStyle: labelConfig.fontStyle,
+      letterSpacing: style.letterSpacing + labelConfig.letterSpacingAdjust,
+      shadows: [
+        Shadow(
+          color: style.labelShadowColor,
+          blurRadius: style.flatStyle ? 1 : 6,
+          offset: Offset(0, style.flatStyle ? 1 : 2),
+        ),
+      ],
+    );
+
+    if (!labelConfig.outline) {
+      return Text(
+        labelConfig.primary,
+        textAlign: TextAlign.center,
+        style: textStyle,
+      );
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Text(
+          labelConfig.primary,
+          textAlign: TextAlign.center,
+          style: textStyle.copyWith(
+            foreground: Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = style.pixelStyle ? 2.4 : 1.8
+              ..color = style.labelShadowColor.withOpacity(0.85),
+            shadows: const [],
+          ),
+        ),
+        Text(
+          labelConfig.primary,
+          textAlign: TextAlign.center,
+          style: textStyle,
+        ),
+      ],
+    );
   }
 
   Widget _buildStyleSwitcher() {
@@ -1238,6 +1674,46 @@ class _PixelCorner extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StartLabelConfig {
+  const _StartLabelConfig({
+    required this.primary,
+    this.secondary,
+    this.badge,
+    this.badgeAlignment = Alignment.topLeft,
+    this.badgePadding = EdgeInsets.zero,
+    this.alignment = Alignment.center,
+    this.padding = EdgeInsets.zero,
+    this.fontStyle = FontStyle.normal,
+    this.fontWeight = FontWeight.w900,
+    this.primaryScaleX = 1,
+    this.primaryScaleY = 1,
+    this.primaryRotation = 0,
+    this.primarySizeAdjust = 0,
+    this.letterSpacingAdjust = 0,
+    this.secondarySize = 10,
+    this.secondaryLetterSpacing = 2.0,
+    this.outline = false,
+  });
+
+  final String primary;
+  final String? secondary;
+  final String? badge;
+  final Alignment badgeAlignment;
+  final EdgeInsets badgePadding;
+  final Alignment alignment;
+  final EdgeInsets padding;
+  final FontStyle fontStyle;
+  final FontWeight fontWeight;
+  final double primaryScaleX;
+  final double primaryScaleY;
+  final double primaryRotation;
+  final double primarySizeAdjust;
+  final double letterSpacingAdjust;
+  final double secondarySize;
+  final double secondaryLetterSpacing;
+  final bool outline;
 }
 
 class _StartButtonStyleData {
