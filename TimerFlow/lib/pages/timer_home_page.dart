@@ -583,12 +583,15 @@ class TimerHomePage extends StatefulWidget {
 }
 
 class _TimerHomePageState extends State<TimerHomePage> {
+  static const String _primaryBellAsset = 'sound/bell_fast.wav';
+  static const String _fallbackBellAsset = 'sound/bell.mp3';
   static final _StartButtonStyleData _activeStartStyle =
       _startButtonStyles.firstWhere((style) => style.id == 6);
 
   Timer? _ticker;
   Timer? _countdownTicker;
   final AudioPlayer _dingPlayer = AudioPlayer();
+  String? _preparedBellAsset;
   Duration _elapsed = Duration.zero;
   DateTime? _startedAt;
   Duration? _leftStoppedAt;
@@ -605,7 +608,7 @@ class _TimerHomePageState extends State<TimerHomePage> {
   @override
   void initState() {
     super.initState();
-    _dingPlayer.setReleaseMode(ReleaseMode.stop);
+    unawaited(_prepareDingPlayer());
   }
 
   @override
@@ -709,11 +712,38 @@ class _TimerHomePageState extends State<TimerHomePage> {
 
   Future<void> _playPauseSound() async {
     try {
-      await _dingPlayer.stop();
-      await _dingPlayer.play(AssetSource('sound/bell.mp3'));
+      if (_preparedBellAsset == null) {
+        await _prepareDingPlayer();
+      }
+
+      if (_preparedBellAsset != null) {
+        await _dingPlayer.stop();
+        await _dingPlayer.resume();
+        return;
+      }
+
+      await _dingPlayer.play(AssetSource(_fallbackBellAsset));
     } catch (_) {
       // 音效失败时不影响计时主流程
     }
+  }
+
+  Future<void> _prepareDingPlayer() async {
+    for (final mode in [PlayerMode.lowLatency, PlayerMode.mediaPlayer]) {
+      for (final asset in [_primaryBellAsset, _fallbackBellAsset]) {
+        try {
+          await _dingPlayer.setPlayerMode(mode);
+          await _dingPlayer.setReleaseMode(ReleaseMode.stop);
+          await _dingPlayer.setSourceAsset(asset);
+          _preparedBellAsset = asset;
+          return;
+        } catch (_) {
+          // 继续尝试下一个资源或播放模式
+        }
+      }
+    }
+
+    _preparedBellAsset = null;
   }
 
   void _resetToIdle() {
