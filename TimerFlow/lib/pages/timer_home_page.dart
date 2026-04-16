@@ -20,6 +20,7 @@ class _TimerHomePageState extends State<TimerHomePage> {
   Duration? _leftStoppedAt;
   Duration? _rightStoppedAt;
   int? _countdownValue;
+  bool _isStartPressed = false;
 
   bool get _isRunning => _startedAt != null;
   bool get _isFinished => _leftLocked && _rightLocked;
@@ -55,6 +56,7 @@ class _TimerHomePageState extends State<TimerHomePage> {
       _rightStoppedAt = null;
       _startedAt = null;
       _countdownValue = 3;
+      _isStartPressed = false;
     });
 
     _countdownTicker = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -207,66 +209,141 @@ class _TimerHomePageState extends State<TimerHomePage> {
   }
 
   Widget _buildStartButton() {
-    final borderRadius = BorderRadius.circular(30);
+    final shellRadius = BorderRadius.circular(42);
+    final keyRadius = BorderRadius.circular(34);
 
-    return SizedBox(
-      width: 280,
-      height: 96,
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: borderRadius,
-              border: Border.all(
-                color: Colors.white.withOpacity(0.28),
-                width: 1.5,
-              ),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8AE6CC),
-                  Color(0xFF60B49D),
-                  Color(0xFF327C72),
+    return AnimatedScale(
+      scale: _isStartPressed ? 0.97 : 1,
+      duration: const Duration(milliseconds: 110),
+      curve: Curves.easeOutCubic,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 110),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _isStartPressed ? 5 : 0, 0),
+        width: 260,
+        height: 92,
+        child: ClipRRect(
+          borderRadius: shellRadius,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: shellRadius,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.8),
+                  width: 1.8,
+                ),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFF8FBFC),
+                    Color(0xFFD9DDE1),
+                    Color(0xFFB7BCC2),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.26),
+                    blurRadius: 22,
+                    offset: Offset(0, _isStartPressed ? 5 : 14),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.45),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  ),
                 ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.18),
-                  blurRadius: 26,
-                  offset: const Offset(0, 14),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _startCountdown,
+                    onTapDown: (_) => setState(() => _isStartPressed = true),
+                    onTapUp: (_) => setState(() => _isStartPressed = false),
+                    onTapCancel: () => setState(() => _isStartPressed = false),
+                    borderRadius: keyRadius,
+                    splashColor: Colors.white.withOpacity(0.08),
+                    highlightColor: Colors.transparent,
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        borderRadius: keyRadius,
+                        border: Border.all(
+                          color: const Color(0xFF595F67),
+                          width: 1.2,
+                        ),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFF626871),
+                            Color(0xFF3D434A),
+                            Color(0xFF272C31),
+                          ],
+                        ),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned(
+                            top: 10,
+                            left: 20,
+                            right: 20,
+                            child: Container(
+                              height: 4,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(99),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.white.withOpacity(0.55),
+                                    Colors.white.withOpacity(0.06),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            left: 20,
+                            child: Row(
+                              children: const [
+                                _AccentPip(color: Color(0xFFE53935)),
+                                SizedBox(width: 5),
+                                _AccentPip(color: Color(0xFFFF6D5E)),
+                              ],
+                            ),
+                          ),
+                          Positioned(
+                            right: 20,
+                            child: Container(
+                              width: 28,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(99),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF6AC7FF),
+                                    Color(0xFF2E79C7),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Text(
+                            'START',
+                            style: TextStyle(
+                              color: Color(0xFFF4F5F6),
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 4.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                BoxShadow(
-                  color: const Color(0xFF60B49D).withOpacity(0.35),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: _startCountdown,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                shadowColor: Colors.transparent,
-                surfaceTintColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                shape: RoundedRectangleBorder(borderRadius: borderRadius),
-                textStyle: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 3.6,
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.play_arrow_rounded, size: 34),
-                  SizedBox(width: 8),
-                  Text('START'),
-                ],
               ),
             ),
           ),
@@ -327,6 +404,30 @@ class _TimerHomePageState extends State<TimerHomePage> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccentPip extends StatelessWidget {
+  const _AccentPip({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.45),
+            blurRadius: 6,
+          ),
         ],
       ),
     );
